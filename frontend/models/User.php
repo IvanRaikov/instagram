@@ -20,6 +20,10 @@ use yii\web\IdentityInterface;
  * @property integer $created_at
  * @property integer $updated_at
  * @property string $password write-only password
+ * @property string $about
+ * @property integer $type
+ * @property string $nickname
+ * @property string $picture
  */
 class User extends ActiveRecord implements IdentityInterface
 {
@@ -185,5 +189,47 @@ class User extends ActiveRecord implements IdentityInterface
     public function removePasswordResetToken()
     {
         $this->password_reset_token = null;
+    }
+    /**
+     * 
+     * @return mixed
+     */
+    public function getNickname(){
+        return $this->nickname ? $this->nickname : $this->id;
+    }
+    public function fallowUser(User $user){
+        $redis = Yii::$app->redis;
+        $redis->sadd("user:{$this->id}:subscriptions", $user->id);
+        $redis->sadd("user:{$user->id}:followers", $this->id);
+    }
+    public function unfallowUser(User $user){
+        $redis = Yii::$app->redis;
+        $redis->srem("user:{$this->id}:subscriptions", $user->id);
+        $redis->srem("user:{$user->id}:followers", $this->id);
+    }
+    public function getSubscriptions(){
+        $redis = Yii::$app->redis;
+        $ids = $redis->smembers("user:{$this->id}:subscriptions");
+        return SELF::find()->select('id,username,nickname')->where(['id'=>$ids])->orderBy('username')->all();
+    }
+    public function getFollowers(){
+        $redis = Yii::$app->redis;
+        $ids = $redis->smembers("user:{$this->id}:followers");
+        return SELF::find()->select('id,username,nickname')->where(['id'=>$ids])->orderBy('username')->all();
+    }
+    public function countSubscriptions(){
+        $redis = Yii::$app->redis;
+        return $redis->scard("user:$this->id:subscriptions");
+    }
+    public function countFollowers(){
+        $redis = Yii::$app->redis;
+        return $redis->scard("user:$this->id:followers");
+    }
+    public function getCommonFriends($user){
+        $redis = Yii::$app->redis;
+        $key1 = "user:$this->id:subscriptions";
+        $key2 = "user:$user->id:followers";
+        $ids = $redis->sinter($key1, $key2);
+        return SELF::find()->where(['id'=>$ids])->orderBy('username')->all();
     }
 }
