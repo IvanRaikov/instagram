@@ -232,4 +232,9 @@ class User extends ActiveRecord implements IdentityInterface
         $ids = $redis->sinter($key1, $key2);
         return SELF::find()->where(['id'=>$ids])->orderBy('username')->all();
     }
+    public function getPicture(){
+        if($this->picture){
+            return Yii::$app->storage->getFile($this->picture);
+        }return '/uploads/no-image.jpg';
+    }
 }
