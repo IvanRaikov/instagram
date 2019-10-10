@@ -6,6 +6,7 @@ use yii\base\NotSupportedException;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
+use frontend\models\Feed;
 
 /**
  * User model
@@ -29,6 +30,7 @@ class User extends ActiveRecord implements IdentityInterface
 {
     const STATUS_DELETED = 0;
     const STATUS_ACTIVE = 10;
+    const DEFAULT_IMAGE = 'no-image.jpg';
 
 
     /**
@@ -235,6 +237,13 @@ class User extends ActiveRecord implements IdentityInterface
     public function getPicture(){
         if($this->picture){
             return Yii::$app->storage->getFile($this->picture);
-        }return '/uploads/no-image.jpg';
+        }return '/uploads/'.SELF::DEFAULT_IMAGE;
+    }
+    public function getFeed($limit){
+        return $this->hasMany(Feed::className(), ['user_id'=>'id'])->orderBy(['post_created_at'=>SORT_DESC])->limit($limit)->all();
+    }
+    public function isLikedBy($postId){
+        $redis = Yii::$app->redis;
+        return $redis->sismember("user:{$this->id}:likes",$postId);
     }
 }

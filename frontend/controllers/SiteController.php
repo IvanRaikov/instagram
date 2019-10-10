@@ -3,6 +3,7 @@ namespace frontend\controllers;
 
 use yii\web\Controller;
 use frontend\models\User;
+use Yii;
 
 /**
  * Site controller
@@ -28,9 +29,15 @@ class SiteController extends Controller
      * @return mixed
      */
     public function actionIndex(){
-        $users = User::find()->all();
+        if(Yii::$app->user->isGuest){
+            return $this->redirect('/user/default/login');
+        }
+        $currentUser = Yii::$app->user->identity;
+        $limit = Yii::$app->params['feedPostLimit'];
+        $feedItems = $currentUser->getFeed($limit);
         return $this->render('index',[
-            'users' => $users
+            'feedItems'=>$feedItems,
+            'currentUser'=>$currentUser
         ]);
     }
 }

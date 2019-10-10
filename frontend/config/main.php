@@ -10,11 +10,15 @@ return [
     'id' => 'app-frontend',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
+    'language'=>'RU',
     'controllerNamespace' => 'frontend\controllers',
     'modules' => [
         'user' => [
             'class' => 'frontend\modules\user\Module',
-        ]
+        ],
+        'post' => [
+            'class' => 'frontend\modules\post\Module',
+        ],
         ],
     'components' => [
         'request' => [
@@ -46,7 +50,8 @@ return [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
-                'profile/<nickname:\w+>'=>'user/profile/view'
+                'profile/<nickname:\w+>'=>'user/profile/view',
+                'post/<id:\d+>'=>'/post/default/view'
             ],
         ],
         'redis' => [
@@ -57,8 +62,10 @@ return [
         ],
         'storage'=>[
             'class' => 'frontend\components\Storage'
+        ],
+        'feedService'=>[
+            'class'=>'frontend\components\FeedService'
         ]
-        
     ],
     'params' => $params,
 ];

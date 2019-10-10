@@ -3,12 +3,16 @@ use yii\helpers\Html;
 use yii\helpers\HtmlPurifier;
 use yii\helpers\Url;
 ?>
-<img src="<?=$user->getPicture()?>" style="max-width:200px;">
+<img src="<?=$user->getPicture()?>" style="max-width:400px;">
 <h3><?= Html::encode($user->username)?></h3>
 <p><?= HtmlPurifier::process($user->about)?></p>
+<?php if($currentUser && $currentUser->equals($user)):?>
 <a class="btn btn-info" href="<?= Url::to(['/user/profile/upload-picture'])?>">загрузить фото</a>
+<a class="btn btn-info" href="<?= Url::to(['/post/default/create'])?>">добавить пост</a>
+<?php else:?>
 <a class="btn btn-info" href="<?= Url::to(['/user/profile/subscribe', 'id'=>$user->id])?>">подписаться</a>
 <a class="btn btn-info" href="<?= Url::to(['/user/profile/unsubscribe', 'id'=>$user->id])?>">отписатся</a>
+<?php endif;?>
 <h3>подписки <?=$countSubscriptions?></h3>
 <?php foreach($subscriptions as $subscription):?>
 <a href="<?= Url::to(['/user/profile/view', 'nickname'=>$subscription->getNickname()])?>"><?=$subscription->username?></a><br>
