@@ -13,6 +13,7 @@ use Yii;
  * @property string $file_name
  * @property string $description
  * @property int $created_at
+ * @property int $complaints
  */
 class Post extends \yii\db\ActiveRecord
 {
@@ -59,5 +60,15 @@ class Post extends \yii\db\ActiveRecord
     public function isLikedBy(User $currentUser){
         $redis = Yii::$app->redis;
         return $redis->sismember("post:{$this->id}:likes", $currentUser->id);
+    }
+    public function complain(User $currentUser)
+    {
+        $redis = Yii::$app->redis;
+        $key = "post:{$this->id}:complaints";
+        if (!$redis->sismember($key, $currentUser->id)) {
+            $redis->sadd($key, $currentUser->id);
+            $this->complaints++;
+            return $this->save();
+        }
     }
 }

@@ -9,6 +9,8 @@ use Yii;
 use yii\web\UploadedFile;
 use app\models\Post;
 use yii\web\NotFoundHttpException;
+use yii\web\Response;
+
 /**
  * Default controller for the `post` module
  */
@@ -63,5 +65,23 @@ class DefaultController extends Controller
         $post = Post::findOne($postId);
         $currentUser = Yii::$app->user->identity;
         return $post->dislike($currentUser);
+    }
+    public function actionComplain()
+    {
+        if (Yii::$app->user->isGuest) {
+            return $this->goHome();
+        }
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        $id = Yii::$app->request->post('id');
+        $currentUser = Yii::$app->user->identity;
+        $post = $this->findPost($id);
+        if ($post->complain($currentUser)) {
+            return[
+                'text'=>'жалоба принята'
+            ];
+        }
+            return[
+                'text'=>'произошла ошибка'
+            ];
     }
 }
