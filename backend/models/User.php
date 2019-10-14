@@ -1,4 +1,4 @@
-<?php
+<?php 
 namespace backend\models;
 
 use Yii;
@@ -7,6 +7,7 @@ use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
 use frontend\models\Feed;
+use yii\helpers\ArrayHelper;
 
 /**
  * User model
@@ -31,7 +32,9 @@ class User extends ActiveRecord implements IdentityInterface
     const STATUS_DELETED = 0;
     const STATUS_ACTIVE = 10;
     const DEFAULT_IMAGE = 'no-image.jpg';
-
+    const ROLE_ADMIN = 'admin';
+    const ROLE_MODERATOR = 'moderator';
+    public $roles;
 
     /**
      * {@inheritdoc}
@@ -59,7 +62,14 @@ class User extends ActiveRecord implements IdentityInterface
         return [
             ['status', 'default', 'value' => self::STATUS_ACTIVE],
             ['status', 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_DELETED]],
+            ['roles', 'safe']
         ];
+    }
+    
+    public function __construct()
+    {
+        $this->on(SELF::EVENT_AFTER_UPDATE, [$this, 'saveRoles']);
+        $this->on(SELF::EVENT_AFTER_FIND, [$this, 'afterFind']);
     }
 
     /**
@@ -192,58 +202,36 @@ class User extends ActiveRecord implements IdentityInterface
     {
         $this->password_reset_token = null;
     }
-    /**
-     * 
-     * @return mixed
-     */
-    public function getNickname(){
-        return $this->nickname ? $this->nickname : $this->id;
-    }
-    public function fallowUser(User $user){
-        $redis = Yii::$app->redis;
-        $redis->sadd("user:{$this->id}:subscriptions", $user->id);
-        $redis->sadd("user:{$user->id}:followers", $this->id);
-    }
-    public function unfallowUser(User $user){
-        $redis = Yii::$app->redis;
-        $redis->srem("user:{$this->id}:subscriptions", $user->id);
-        $redis->srem("user:{$user->id}:followers", $this->id);
-    }
-    public function getSubscriptions(){
-        $redis = Yii::$app->redis;
-        $ids = $redis->smembers("user:{$this->id}:subscriptions");
-        return SELF::find()->select('id,username,nickname')->where(['id'=>$ids])->orderBy('username')->all();
-    }
-    public function getFollowers(){
-        $redis = Yii::$app->redis;
-        $ids = $redis->smembers("user:{$this->id}:followers");
-        return SELF::find()->select('id,username,nickname')->where(['id'=>$ids])->orderBy('username')->all();
-    }
-    public function countSubscriptions(){
-        $redis = Yii::$app->redis;
-        return $redis->scard("user:$this->id:subscriptions");
-    }
-    public function countFollowers(){
-        $redis = Yii::$app->redis;
-        return $redis->scard("user:$this->id:followers");
-    }
-    public function getCommonFriends($user){
-        $redis = Yii::$app->redis;
-        $key1 = "user:$this->id:subscriptions";
-        $key2 = "user:$user->id:followers";
-        $ids = $redis->sinter($key1, $key2);
-        return SELF::find()->where(['id'=>$ids])->orderBy('username')->all();
-    }
+    
     public function getPicture(){
         if($this->picture){
             return Yii::$app->storage->getFile($this->picture);
-        }return '/uploads/'.SELF::DEFAULT_IMAGE;
+        }return Yii::$app->params['storageUri'].SELF::DEFAULT_IMAGE;
     }
     public function getFeed($limit){
         return $this->hasMany(Feed::className(), ['user_id'=>'id'])->orderBy(['post_created_at'=>SORT_DESC])->limit($limit)->all();
     }
-    public function isLikedBy($postId){
-        $redis = Yii::$app->redis;
-        return $redis->sismember("user:{$this->id}:likes",$postId);
+    public function getRoles(){
+        return [
+            SELF::ROLE_ADMIN => 'admin',
+            SELF::ROLE_MODERATOR => 'moderator'
+        ];
+    }
+    public function saveRoles()
+    {
+        Yii::$app->authManager->revokeAll($this->id);
+        if (is_array($this->roles)) {
+            foreach ($this->roles as $roleName) {
+                $role = Yii::$app->authManager->getRole($roleName);
+                Yii::$app->authManager->assign($role, $this->id);
+            } 
+        }
+    }
+    public function afterFind(){
+        $this->roles = $this->getUserRoles();
+    }
+    public function getUserRoles(){
+        $roles = Yii::$app->authManager->getRolesByUser($this->id);
+        return ArrayHelper::getColumn($roles, 'name');
     }
 }

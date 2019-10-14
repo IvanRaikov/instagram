@@ -13,29 +13,25 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <h1><?= Html::encode($this->title) ?></h1>
 
-    <p>
-        <?= Html::a('Create User', ['create'], ['class' => 'btn btn-success']) ?>
-    </p>
-
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
-
-            'id',
+            ['attribute' => 'picture',
+             'format' => 'raw',
+             'value' => function($user){
+                return Html::img($user->getPicture(), ['width'=>'100px']);
+             }],
+            ['attribute' => 'roles',
+             'format' => 'raw', 
+             'value' => function($user){
+                 return implode(' ',$user->getUserRoles());
+             }],
             'username',
-            'auth_key',
-            'password_hash',
-            'password_reset_token',
-            //'email:email',
-            //'status',
-            //'created_at',
-            //'updated_at',
-            //'about:ntext',
-            //'type',
-            //'nickname',
-            //'picture',
-
+            'email:email',
+            'status',
+            'created_at:datetime',
+            'nickname',
             ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>
