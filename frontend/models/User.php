@@ -7,6 +7,7 @@ use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
 use frontend\models\Feed;
+use frontend\models\Post;
 
 /**
  * User model
@@ -212,12 +213,12 @@ class User extends ActiveRecord implements IdentityInterface
     public function getSubscriptions(){
         $redis = Yii::$app->redis;
         $ids = $redis->smembers("user:{$this->id}:subscriptions");
-        return SELF::find()->select('id,username,nickname')->where(['id'=>$ids])->orderBy('username')->all();
+        return SELF::find()->select('id,username,nickname,picture')->where(['id'=>$ids])->orderBy('username')->all();
     }
     public function getFollowers(){
         $redis = Yii::$app->redis;
         $ids = $redis->smembers("user:{$this->id}:followers");
-        return SELF::find()->select('id,username,nickname')->where(['id'=>$ids])->orderBy('username')->all();
+        return SELF::find()->select('id,username,nickname,picture')->where(['id'=>$ids])->orderBy('username')->all();
     }
     public function countSubscriptions(){
         $redis = Yii::$app->redis;
@@ -239,11 +240,37 @@ class User extends ActiveRecord implements IdentityInterface
             return Yii::$app->storage->getFile($this->picture);
         }return '/uploads/'.SELF::DEFAULT_IMAGE;
     }
-    public function getFeed($limit){
-        return $this->hasMany(Feed::className(), ['user_id'=>'id'])->orderBy(['post_created_at'=>SORT_DESC])->limit($limit)->all();
+    public function getFeed($limit, $offset = null){
+        if($offset == null){
+           return $this->hasMany(Feed::className(), ['user_id'=>'id'])->orderBy(['post_created_at'=>SORT_DESC])->limit($limit)->all(); 
+        }
+        return $this->hasMany(Feed::className(), ['user_id'=>'id'])->orderBy(['post_created_at'=>SORT_DESC])->offset($offset)->limit($limit)->all();
+    }
+    public function getMoreFeed($limit, $offset){
+        $response = [];
+        $feeds = $this->getFeed($limit, $offset);
+        $i =0;
+        foreach($feeds as $feed){
+            $post = Post::findOne($feed->post_id);
+            $response[$i]['autor_id']=$feed->autor_id;
+            $response[$i]['autor_name']=$feed->autor_name;
+            $response[$i]['autor_picture']=$feed->autor_picture;
+            $response[$i]['post_id']=$feed->post_id;
+            $response[$i]['created_at']=Yii::$app->formatter->asDatetime($feed->post_created_at);
+            $response[$i]['post_description']=$feed->post_description;
+            $response[$i]['post_filename']=$feed->post_filename;
+            $response[$i]['is_liked']=$this->isLikedBy($feed->post_id);
+            $response[$i]['is_reported']=$post->isReported($this);
+            $response[$i]['count_likes']=$post->countLikes();
+            $i++;
+        }
+        return $response;
     }
     public function isLikedBy($postId){
         $redis = Yii::$app->redis;
         return $redis->sismember("user:{$this->id}:likes",$postId);
+    }
+    public function getPost(){
+        return $this->hasMany(Post::className(), ['user_id'=>'id']);
     }
 }

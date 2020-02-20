@@ -4,6 +4,7 @@ namespace frontend\controllers;
 use yii\web\Controller;
 use frontend\models\User;
 use Yii;
+use yii\web\Response;
 
 /**
  * Site controller
@@ -39,5 +40,13 @@ class SiteController extends Controller
             'feedItems'=>$feedItems,
             'currentUser'=>$currentUser
         ]);
+    }
+    public function actionMoreFeeds(){
+        $offset = Yii::$app->request->post('offset');
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        $currentUser = Yii::$app->user->identity;
+        $limit = Yii::$app->params['feedPostLimit'];
+        $feedItems = $currentUser->getMoreFeed($limit, $offset);
+        return $feedItems;
     }
 }

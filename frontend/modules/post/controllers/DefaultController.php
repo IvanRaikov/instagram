@@ -7,7 +7,7 @@ use yii\web\Controller;
 use frontend\modules\post\models\PostForm;
 use Yii;
 use yii\web\UploadedFile;
-use app\models\Post;
+use frontend\models\Post;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
@@ -34,13 +34,15 @@ class DefaultController extends Controller
     }
     public function actionView($id){
         $post = $this->findPost($id);
-        $user = User::findOne($post->user_id);
-        $currentUser = Yii::$app->user->identity;
-        return $this->render('view',[
-            'post'=> $post,
-            'user'=>$user,
-            'currentUser'=>$currentUser
-        ]);
+        $isLikedBy = Yii::$app->user->identity->isLikedBy($id);
+        $response['file_name'] = $post->file_name;
+        $response['created_at'] = $post->created_at;
+        $response['description'] = $post->description;
+        $response['is_reported'] = $post->isReported(Yii::$app->user->identity);
+        $response['is_liked_by'] = $isLikedBy;
+        $response['count_likes'] = $post->countLikes();
+        Yii::$app->response->format = Response::FORMAT_JSON;
+        return $response;
     }
     public function findPost($id){
         if($post = Post::findOne($id)){
@@ -84,4 +86,5 @@ class DefaultController extends Controller
                 'text'=>'произошла ошибка'
             ];
     }
+    
 }

@@ -3,7 +3,7 @@ namespace frontend\modules\post\models;
 use yii\base\Model;
 use Yii;
 use frontend\models\User;
-use app\models\Post;
+use frontend\models\Post;
 use frontend\models\events\PostCreatedEvent;
 
 class PostForm extends Model{
@@ -21,7 +21,7 @@ class PostForm extends Model{
         return[
           [['picture'],'file',
               'skipOnEmpty'=>false,
-              'extensions'=>['jpg'],
+              'extensions'=>['jpg','png','jpeg'],
               'checkExtensionByMimeType'=>true,
               'maxSize'=>$this->getMaxFileSize()],
            [['description'],'string','max'=>SELF::MAX_DESCRIPTION_LENGTH]

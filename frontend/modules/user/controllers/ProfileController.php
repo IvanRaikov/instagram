@@ -7,6 +7,8 @@ use Yii;
 use yii\web\NotFoundHttpException;
 use frontend\modules\user\models\PictureForm;
 use yii\web\UploadedFile;
+use yii\data\Pagination;
+use frontend\models\Post;
 
 class ProfileController extends Controller{
     
@@ -17,12 +19,18 @@ class ProfileController extends Controller{
         $followers = $user->getFollowers();
         $countFollowers = $user->countFollowers();
         $countSubscriptions = $user->countSubscriptions();
+        $query = Post::find()->where(['user_id'=>$user->id]);
+        $count = $query->count();
+        $pagination = new Pagination(['totalCount'=>$count, 'pageSize'=>8]);
+        $posts = $query->offset($pagination->offset)->limit($pagination->limit)->all();
         return $this->render('view',['user'=>$user,
                              'subscriptions'=>$subscriptions,
                              'followers'=>$followers,
                              'countFollowers'=>$countFollowers,
                              'countSubscriptions'=>$countSubscriptions,
-                             'currentUser'=>$currentUser
+                             'currentUser'=>$currentUser,
+                             'posts'=>$posts,
+                             'pagination'=>$pagination
                 ]);
     }
     public function actionSubscribe($id){

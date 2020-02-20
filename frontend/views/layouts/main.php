@@ -9,6 +9,7 @@ use yii\bootstrap\NavBar;
 use yii\widgets\Breadcrumbs;
 use frontend\assets\AppAsset;
 use common\widgets\Alert;
+use yii\helpers\Url;
 
 AppAsset::register($this);
 ?>
@@ -27,36 +28,48 @@ AppAsset::register($this);
 <?php $this->beginBody() ?>
 
 <div class="wrap">
+    <nav class="main-menu">
+        <ul>
+            <li id="brand"><a  href="/">Главная</a></li>
+            <?php if(!isset(Yii::$app->user->identity)):?>
+            <li><a href="<?= Url::to(['/user/default/signup'])?>">Регистрация</a></li>
+            <li><a href="<?= Url::to(['/user/default/login'])?>">Войти</a></li>
+            <?php else:?>
+            <li><a href="<?= Url::to(['/profile/'.Yii::$app->user->identity->getNickname()])?>">Мой профиль</a></li>
+            <li><a href="<?= Url::to(['/user/default/logout/'])?>">Выйти</a></li>
+            <?php endif;?>
+        </ul>
+    </nav>
     <?php
-    NavBar::begin([
-        'brandLabel' => Yii::$app->name,
-        'brandUrl' => Yii::$app->homeUrl,
-        'options' => [
-            'class' => 'navbar-inverse navbar-fixed-top',
-        ],
-    ]);
-    $menuItems = [
-        ['label' => 'Главная', 'url' => ['/site/index']],
-    ];
-    if (Yii::$app->user->isGuest) {
-        $menuItems[] = ['label' => 'Регистрация', 'url' => ['/user/default/signup']];
-        $menuItems[] = ['label' => 'Войти', 'url' => ['/user/default/login']];
-    } else {
-        $menuItems[] = ['label' => 'Мой профиль', 'url' => ['/profile/'.Yii::$app->user->identity->getNickname()]];
-        $menuItems[] = '<li>'
-            . Html::beginForm(['/user/default/logout'], 'post')
-            . Html::submitButton(
-                'Выйти (' . Yii::$app->user->identity->username . ')',
-                ['class' => 'btn btn-link logout']
-            )
-            . Html::endForm()
-            . '</li>';
-    }
-    echo Nav::widget([
-        'options' => ['class' => 'navbar-nav navbar-right'],
-        'items' => $menuItems,
-    ]);
-    NavBar::end();
+//    NavBar::begin([
+//        'brandLabel' => Yii::$app->name,
+//        'brandUrl' => Yii::$app->homeUrl,
+//        'options' => [
+//            'class' => 'navbar-inverse navbar-fixed-top',
+//        ],
+//    ]);
+//    $menuItems = [
+//        ['label' => 'Главная', 'url' => ['/site/index']],
+//    ];
+//    if (Yii::$app->user->isGuest) {
+//        $menuItems[] = ['label' => 'Регистрация', 'url' => ['/user/default/signup']];
+//        $menuItems[] = ['label' => 'Войти', 'url' => ['/user/default/login']];
+//    } else {
+//        $menuItems[] = ['label' => 'Мой профиль', 'url' => ['/profile/'.Yii::$app->user->identity->getNickname()]];
+//        $menuItems[] = '<li>'
+//            . Html::beginForm(['/user/default/logout'], 'post')
+//            . Html::submitButton(
+//                'Выйти (' . Yii::$app->user->identity->username . ')',
+//                ['class' => 'btn btn-link logout']
+//            )
+//            . Html::endForm()
+//            . '</li>';
+//    }
+//    echo Nav::widget([
+//        'options' => ['class' => 'navbar-nav navbar-right'],
+//        'items' => $menuItems,
+//    ]);
+//    NavBar::end();
     ?>
 
     <div class="container">

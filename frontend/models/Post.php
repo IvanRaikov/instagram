@@ -1,6 +1,6 @@
 <?php
 
-namespace app\models;
+namespace frontend\models;
 
 use frontend\models\User;
 use Yii;
@@ -39,7 +39,7 @@ class Post extends \yii\db\ActiveRecord
         ];
     }
     public function getUser(){
-        return $this->hasOne(User::className(), ['id', 'user_id']);
+        return $this->hasOne(User::className(), ['id'=>'user_id']);
     }
     public function like(User $currentUser){
         $redis = Yii::$app->redis;
@@ -70,5 +70,10 @@ class Post extends \yii\db\ActiveRecord
             $this->complaints++;
             return $this->save();
         }
+    }
+    public function isReported(User $currentUser)
+    {
+        $redis = Yii::$app->redis;
+        return $redis->sismember("post:{$this->id}:complaints", $currentUser->id);
     }
 }
